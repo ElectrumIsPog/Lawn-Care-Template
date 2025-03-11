@@ -3,7 +3,7 @@ import { supabase, isLocalhost } from './supabase';
 /**
  * Sign in with email and password
  */
-export async function signIn(email: string, password: string) {
+export async function signIn(email: string, password: string): Promise<UserSession> {
   if (!email || !password) {
     throw new Error('Email and password are required');
   }
@@ -11,6 +11,10 @@ export async function signIn(email: string, password: string) {
   console.log(`Signing in with email: ${email}`);
   
   try {
+    // First, ensure we don't have any existing session that might interfere
+    await supabase.auth.signOut();
+    
+    // Now sign in with the credentials
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password: password.trim(),
@@ -21,7 +25,13 @@ export async function signIn(email: string, password: string) {
       throw error;
     }
 
+    if (!data.session) {
+      console.error('No session data returned from signInWithPassword');
+      throw new Error('Failed to create session');
+    }
+
     console.log('Sign in successful, session created:', !!data.session);
+    console.log('Session expires at:', new Date((data.session.expires_at || 0) * 1000).toISOString());
     
     // For localhost, we'll log additional info to help debug
     if (isLocalhost) {
@@ -31,12 +41,34 @@ export async function signIn(email: string, password: string) {
       try {
         const cookieString = document.cookie;
         console.log('Current cookies after login:', cookieString);
+        
+        // Verify the session was properly created
+        const verifySession = await supabase.auth.getSession();
+        if (verifySession.data.session) {
+          console.log('Session verified via getSession()');
+          // Try setting the session manually in localStorage as a backup
+          if (typeof window !== 'undefined' && window.localStorage) {
+            try {
+              const storageKey = 'supabase.auth.token';
+              window.localStorage.setItem(storageKey, JSON.stringify({
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token,
+                expires_at: data.session.expires_at
+              }));
+              console.log('Session data manually stored in localStorage');
+            } catch (storageErr) {
+              console.warn('Could not store session in localStorage:', storageErr);
+            }
+          }
+        } else {
+          console.warn('Session not found in getSession() immediately after login');
+        }
       } catch (e) {
-        console.warn('Could not read cookies:', e);
+        console.warn('Could not perform extra session verification:', e);
       }
     }
     
-    return data;
+    return data as UserSession;
   } catch (error) {
     console.error('Authentication error:', error);
     throw error;

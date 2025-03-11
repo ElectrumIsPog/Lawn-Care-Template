@@ -6,14 +6,19 @@ const PROTECTED_ROUTES = [
   '/admin/services', 
   '/admin/gallery', 
   '/admin/contact', 
-  '/admin/settings',
+  '/admin/settings'
+];
+
+// Semi-protected routes - we're more lenient on these routes (especially for localhost)
+const SEMI_PROTECTED_ROUTES = [
   '/admin/dashboard'
 ];
 
 // Skip auth check on these routes
 const PUBLIC_ROUTES = [
   '/',
-  '/admin/login'
+  '/admin/login',
+  '/auth/verify'
 ];
 
 // Maximum redirects to prevent loops
@@ -47,13 +52,18 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute = PROTECTED_ROUTES.some(route => 
     pathname.startsWith(route)
   );
+
+  const isSemiProtectedRoute = SEMI_PROTECTED_ROUTES.some(route => 
+    pathname.startsWith(route)
+  );
   
-  if (!isProtectedRoute) {
+  if (!isProtectedRoute && !isSemiProtectedRoute) {
     return NextResponse.next();
   }
   
   // Log debugging info
-  console.log('🔒 Checking auth for protected route:', pathname);
+  console.log('🔒 Checking auth for route:', pathname, 
+    isProtectedRoute ? '(strictly protected)' : '(semi-protected)');
   
   // Get Supabase environment variables
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -64,31 +74,111 @@ export async function middleware(request: NextRequest) {
     return redirectToLogin(request, redirectCount);
   }
   
+  // Check for localhost and whether we should be more lenient
+  const isLocalhost = 
+    request.headers.get('host')?.includes('localhost') || 
+    request.headers.get('host')?.includes('127.0.0.1');
+  
   try {
-    // Extract the session cookie from the request
-    const supabaseAuthCookie = request.cookies.get('sb-auth-token')?.value || 
-                               request.cookies.get('supabase-auth-token')?.value || 
-                               getCookieByPrefix(request, 'sb-');
-                               
-    if (!supabaseAuthCookie) {
-      console.log('⚠️ No Supabase auth cookie found, redirecting to login');
+    // Look for various forms of Supabase auth cookies that might be present
+    const cookieNames = [
+      'sb-auth-token',
+      'supabase-auth-token',
+      'sb:token',
+      'sb-access-token',
+      'sb-refresh-token'
+    ];
+    
+    let foundAuthCookie = false;
+    let authCookieValue = '';
+    
+    // Look for any cookie that might be an auth cookie
+    for (const name of cookieNames) {
+      const cookie = request.cookies.get(name);
+      if (cookie?.value) {
+        foundAuthCookie = true;
+        authCookieValue = cookie.value;
+        console.log(`📝 Found auth cookie: ${name}`);
+        break;
+      }
+    }
+    
+    // If no direct cookie, try checking for cookie with prefix
+    if (!foundAuthCookie) {
+      const maybeAuthCookie = getCookieByPrefix(request, 'sb-');
+      if (maybeAuthCookie) {
+        foundAuthCookie = true;
+        authCookieValue = maybeAuthCookie;
+        console.log('📝 Found auth cookie with prefix sb-');
+      }
+    }
+    
+    // Also check for Authorization header (might be used in API requests)
+    const authHeader = request.headers.get('authorization');
+    const hasAuthHeader = authHeader && authHeader.startsWith('Bearer ');
+    
+    if (!foundAuthCookie && !hasAuthHeader) {
+      console.log('⚠️ No Supabase auth cookie or header found');
+      
+      // For semi-protected routes on localhost, we'll be more lenient
+      if (isLocalhost && isSemiProtectedRoute) {
+        console.log('🔓 Allowing localhost access to semi-protected route without auth');
+        return NextResponse.next();
+      }
+      
       return redirectToLogin(request, redirectCount);
     }
     
-    // Create a Supabase client with the auth cookie
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Cookie: `sb-auth-token=${supabaseAuthCookie}`
-        }
+    // Try to create a Supabase client with the auth cookie
+    let supabaseClientOptions: any = {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
       }
-    });
+    };
+    
+    // If we found an auth cookie, add it to the request
+    if (foundAuthCookie) {
+      supabaseClientOptions.global = {
+        headers: {
+          Cookie: `sb-auth-token=${authCookieValue}`
+        }
+      };
+    } else if (hasAuthHeader) {
+      // If we have an auth header, use it
+      supabaseClientOptions.global = {
+        headers: {
+          Authorization: authHeader
+        }
+      };
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, supabaseClientOptions);
     
     // Check if the session is valid
     const { data, error } = await supabase.auth.getSession();
     
-    if (error || !data.session) {
-      console.log('❌ Invalid session, redirecting to login');
+    if (error) {
+      console.log('❌ Session error:', error.message);
+      
+      // For semi-protected routes on localhost, allow even with errors
+      if (isLocalhost && isSemiProtectedRoute) {
+        console.log('🔓 Allowing localhost access to semi-protected route despite error');
+        return NextResponse.next();
+      }
+      
+      return redirectToLogin(request, redirectCount);
+    }
+    
+    if (!data.session) {
+      console.log('❌ No valid session found');
+      
+      // For semi-protected routes on localhost, we'll be more lenient
+      if (isLocalhost && isSemiProtectedRoute) {
+        console.log('🔓 Allowing localhost access to semi-protected route without session');
+        return NextResponse.next();
+      }
+      
       return redirectToLogin(request, redirectCount);
     }
     
@@ -96,6 +186,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   } catch (error) {
     console.error('Error in middleware:', error);
+    
+    // For semi-protected routes on localhost, allow even with errors
+    if (isLocalhost && isSemiProtectedRoute) {
+      console.log('🔓 Allowing localhost access to semi-protected route despite error');
+      return NextResponse.next();
+    }
+    
     return redirectToLogin(request, redirectCount);
   }
 }
@@ -158,6 +255,8 @@ function createDebugResponse(request: NextRequest, redirectCount: number) {
           <p>URL: ${request.url}</p>
           <p>Path: ${request.nextUrl.pathname}</p>
           <p>Cookies: ${request.cookies.getAll().map(c => c.name).join(', ') || 'None found'}</p>
+          <p>Host: ${request.headers.get('host') || 'Unknown'}</p>
+          <p>Auth Header: ${request.headers.get('authorization') ? '✅ Present' : '❌ Missing'}</p>
         </div>
         
         <div class="card steps">
@@ -169,10 +268,11 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
               </pre>
             </li>
+            <li>Try clearing your browser cookies or using a private/incognito window</li>
             <li>Restart your Next.js development server</li>
-            <li>Clear your browser cookies</li>
-            <li>Try using a different browser</li>
-            <li>Check browser console for any errors</li>
+            <li>Check your Supabase configuration in the Supabase dashboard</li>
+            <li>Make sure your Supabase URL is added to the allowed URLs in Supabase Auth settings</li>
+            <li>Check browser console and network tab for errors</li>
           </ol>
         </div>
         

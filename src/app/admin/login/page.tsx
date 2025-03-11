@@ -154,19 +154,24 @@ function LoginForm() {
       if (data.session) {
         console.log('Login successful, session created');
         
-        // Force a slight delay to ensure cookie is set before redirect
+        // Redirect to the verification page instead of directly to the protected route
+        const verificationUrl = `/auth/verify?to=${encodeURIComponent(from)}`;
+        console.log('Redirecting to verification page:', verificationUrl);
+        
+        // Short delay to ensure the session has been established
         setTimeout(() => {
-          console.log('Redirecting to:', from);
-          window.location.href = from;
+          window.location.href = verificationUrl;
         }, 500);
       } else {
         setError('Failed to create session');
         setIsLoading(false);
+        setShowDebug(true);
       }
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Invalid email or password');
       setIsLoading(false);
+      setShowDebug(true);
     }
   };
   
