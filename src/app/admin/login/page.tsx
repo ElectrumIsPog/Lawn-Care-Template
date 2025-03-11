@@ -109,11 +109,16 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [status, setStatus] = useState('');
   const [showDebug, setShowDebug] = useState(false);
   
   const _router = useRouter();
   const searchParams = useSearchParams();
-  const from = searchParams.get('from') || '/admin/dashboard';
+  
+  // Get and properly decode the 'from' parameter
+  const encodedFrom = searchParams.get('from');
+  const from = encodedFrom ? decodeURIComponent(encodedFrom) : '/admin/dashboard';
+  
   const redirectCount = searchParams.get('redirectCount') || '0';
 
   // Automatically show debug info if we're in a redirect loop
@@ -127,10 +132,22 @@ function LoginForm() {
   // Check if already authenticated
   useEffect(() => {
     async function checkAuth() {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        console.log('User already has a session, redirecting to:', from);
-        window.location.href = from;
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error checking authentication:', error);
+          return;
+        }
+        
+        if (data.session) {
+          console.log('User already has a session, redirecting to:', from);
+          // Use verification page for a more reliable redirect
+          const verificationUrl = `/auth/verify?to=${encodeURIComponent(from)}`;
+          window.location.href = verificationUrl;
+        }
+      } catch (err) {
+        console.error('Exception checking auth:', err);
       }
     }
     checkAuth();
@@ -149,19 +166,29 @@ function LoginForm() {
     
     try {
       console.log('Attempting login with:', email);
+      
+      // First clear any existing sessions
+      await supabase.auth.signOut();
+      
+      // Then attempt to sign in
       const data = await signIn(email, password);
       
       if (data.session) {
         console.log('Login successful, session created');
         
-        // Redirect to the verification page instead of directly to the protected route
+        // Show success message
+        setStatus('Authentication successful! Verifying session...');
+        
+        // Redirect to the verification page with a longer delay for production
         const verificationUrl = `/auth/verify?to=${encodeURIComponent(from)}`;
         console.log('Redirecting to verification page:', verificationUrl);
         
-        // Short delay to ensure the session has been established
+        // Use a longer delay in production environments
+        const delay = process.env.NODE_ENV === 'production' ? 1500 : 800;
+        
         setTimeout(() => {
           window.location.href = verificationUrl;
-        }, 500);
+        }, delay);
       } else {
         setError('Failed to create session');
         setIsLoading(false);
@@ -187,6 +214,12 @@ function LoginForm() {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             {error}
+          </div>
+        )}
+        
+        {status && (
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
+            {status}
           </div>
         )}
         

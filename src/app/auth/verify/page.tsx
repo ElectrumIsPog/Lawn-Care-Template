@@ -49,10 +49,13 @@ function VerificationContent() {
             }
           }
           
-          // Short delay before redirecting to ensure everything is set
+          // Use a longer delay before redirecting to ensure everything is set
+          // Use window.location.href instead of router.push for more reliable redirects in production
           setTimeout(() => {
-            router.push(destination);
-          }, 1000);
+            console.log('Redirecting to', destination);
+            // Use a direct window location change instead of Next.js router for critical redirects
+            window.location.href = destination;
+          }, 1500);
         } else if (attempts < 5) {
           // Session not yet available, try again in 500ms (up to 5 attempts)
           setStatus(`Session not found, retrying (${attempts}/5)...`);
@@ -90,7 +93,10 @@ function VerificationContent() {
           
           <div className="mt-4">
             <button
-              onClick={() => router.push('/admin/login')}
+              onClick={() => {
+                // Use direct window location change for reliability
+                window.location.href = '/admin/login';
+              }}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
             >
               Back to Login

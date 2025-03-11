@@ -18,7 +18,12 @@ const SEMI_PROTECTED_ROUTES = [
 const PUBLIC_ROUTES = [
   '/',
   '/admin/login',
-  '/auth/verify'
+  '/auth/verify',
+  // Additional resources that should be publicly accessible
+  '/favicon.ico',
+  '/_next',
+  '/images',
+  '/api/auth' // Allow public access to auth-related API routes
 ];
 
 // Maximum redirects to prevent loops
@@ -28,6 +33,14 @@ export async function middleware(request: NextRequest) {
   // Get the pathname from the URL
   const { pathname } = request.nextUrl;
   
+  // Log the request for debugging
+  console.log('📝 Middleware processing:', pathname, request.method);
+  
+  // Skip middleware for static resources
+  if (pathname.includes('/_next/') || pathname.includes('/images/') || pathname.endsWith('.ico')) {
+    return NextResponse.next();
+  }
+
   // Get redirect count to prevent loops
   const url = new URL(request.url);
   const redirectCount = parseInt(url.searchParams.get('redirectCount') || '0');
@@ -38,8 +51,13 @@ export async function middleware(request: NextRequest) {
     return createDebugResponse(request, redirectCount);
   }
   
-  // Skip middleware for public routes
-  if (PUBLIC_ROUTES.some(route => pathname === route)) {
+  // Skip middleware for public routes - using more permissive matching
+  if (PUBLIC_ROUTES.some(route => {
+    if (route.endsWith('/')) {
+      return pathname === route || pathname.startsWith(route);
+    }
+    return pathname === route || pathname.startsWith(route + '/');
+  })) {
     return NextResponse.next();
   }
   
@@ -210,17 +228,22 @@ function getCookieByPrefix(request: NextRequest, prefix: string): string | undef
  * Redirect to login page
  */
 function redirectToLogin(request: NextRequest, currentRedirectCount: number) {
-  const redirectUrl = new URL('/admin/login', request.url);
+  // Create an absolute URL for more reliable redirects across environments
+  const baseUrl = new URL(request.url).origin;
+  const loginPath = '/admin/login';
+  const redirectUrl = new URL(loginPath, baseUrl);
   
-  // Add the original URL as a query parameter
-  redirectUrl.searchParams.set('from', request.nextUrl.pathname);
+  // Add the original URL as a query parameter (encode to handle special characters)
+  const originalPath = request.nextUrl.pathname + request.nextUrl.search;
+  redirectUrl.searchParams.set('from', encodeURIComponent(originalPath));
   
   // Add redirect counter to prevent infinite loops
   redirectUrl.searchParams.set('redirectCount', (currentRedirectCount + 1).toString());
   
-  console.log(`🔄 Redirecting to login (count: ${currentRedirectCount + 1})`);
+  console.log(`🔄 Redirecting to login (count: ${currentRedirectCount + 1}, from: ${originalPath})`);
   
-  return NextResponse.redirect(redirectUrl);
+  // Use a 302 (temporary) redirect for authentication redirects
+  return NextResponse.redirect(redirectUrl, { status: 302 });
 }
 
 /**
