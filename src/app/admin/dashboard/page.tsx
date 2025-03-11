@@ -44,7 +44,9 @@ function SessionDebug() {
       {sessionInfo?.session && (
         <div>
           <p className="mb-1"><strong>User:</strong> {sessionInfo.session.user?.email}</p>
-          <p className="mb-1"><strong>Expires:</strong> {new Date(sessionInfo.session.expires_at * 1000).toString()}</p>
+          <p className="mb-1"><strong>Expires:</strong> {sessionInfo.session.expires_at 
+            ? new Date(sessionInfo.session.expires_at * 1000).toString()
+            : 'No expiration'}</p>
         </div>
       )}
     </div>

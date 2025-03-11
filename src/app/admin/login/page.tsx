@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from '@/lib/auth';
 import { supabase, isLocalhost } from '@/lib/supabase';
@@ -103,7 +103,8 @@ function DebugInfo() {
   );
 }
 
-export default function LoginPage() {
+// Wrap the part of the component that uses useSearchParams in a separate client component
+function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -170,81 +171,94 @@ export default function LoginPage() {
   };
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="bg-green-600 p-6">
-          <h1 className="text-xl font-semibold text-white text-center">
-            Admin Login {isLocalhost && '(Localhost)'}
-          </h1>
-        </div>
+    <div className="max-w-md w-full bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-green-600 p-6">
+        <h1 className="text-xl font-semibold text-white text-center">
+          Admin Login {isLocalhost && '(Localhost)'}
+        </h1>
+      </div>
+      
+      <div className="p-6">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
         
-        <div className="p-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
-          
-          {isLocalhost && (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-4 text-sm">
-              <p className="mb-1"><strong>Localhost Environment</strong></p>
-              <p className="mb-1">Make sure your .env.local file has correct Supabase settings:</p>
-              <p className="text-xs">NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set correctly</p>
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label htmlFor="email" className="block text-gray-700 mb-2">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded"
-                disabled={isLoading}
-                autoComplete="email"
-              />
-            </div>
-            
-            <div className="mb-6">
-              <label htmlFor="password" className="block text-gray-700 mb-2">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded"
-                disabled={isLoading}
-                autoComplete="current-password"
-              />
-            </div>
-            
-            <button
-              type="submit"
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        {isLocalhost && (
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-4 text-sm">
+            <p className="mb-1"><strong>Localhost Environment</strong></p>
+            <p className="mb-1">Make sure your .env.local file has correct Supabase settings:</p>
+            <p className="text-xs">NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set correctly</p>
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label htmlFor="email" className="block text-gray-700 mb-2">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded"
               disabled={isLoading}
-            >
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
-          
-          <div className="mt-4 text-center">
-            <button 
-              onClick={() => setShowDebug(!showDebug)} 
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
-            </button>
+              autoComplete="email"
+            />
           </div>
           
-          {showDebug && <DebugInfo />}
+          <div className="mb-6">
+            <label htmlFor="password" className="block text-gray-700 mb-2">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded"
+              disabled={isLoading}
+              autoComplete="current-password"
+            />
+          </div>
+          
+          <button
+            type="submit"
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
+        
+        <div className="mt-4 text-center">
+          <button 
+            onClick={() => setShowDebug(!showDebug)} 
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            {showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
+          </button>
         </div>
+        
+        {showDebug && <DebugInfo />}
       </div>
+    </div>
+  );
+}
+
+// Main login page component that uses Suspense
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <Suspense fallback={
+        <div className="max-w-md w-full bg-white rounded-lg shadow-md overflow-hidden p-6 text-center">
+          Loading...
+        </div>
+      }>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 } 
