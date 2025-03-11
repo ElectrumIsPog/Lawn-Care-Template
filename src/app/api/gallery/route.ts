@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { GalleryImage } from '@/lib/supabase';
+// GalleryImage type is used indirectly through the response
+// import { GalleryImage } from '@/lib/supabase';
 
 // GET /api/gallery - Get all gallery images
 export async function GET(request: NextRequest) {

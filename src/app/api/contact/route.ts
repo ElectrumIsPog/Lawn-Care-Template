@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { ContactSubmission } from '@/lib/supabase';
+// We're using the type indirectly through the response
+// import { ContactSubmission } from '@/lib/supabase';
 
 // GET /api/contact - Get all contact form submissions (admin only)
 export async function GET(request: NextRequest) {
@@ -13,16 +14,14 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error('Error fetching contact submissions:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(data || []);
   } catch (error) {
-    console.error('Error fetching contact submissions:', error);
-    return NextResponse.json(
-      { error: 'An error occurred while fetching contact submissions' },
-      { status: 500 }
-    );
+    console.error('Error in contact API:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
@@ -31,45 +30,39 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    // Validate request body
+    // Validate the request body
     if (!body.name || !body.email || !body.message) {
       return NextResponse.json(
-        { error: 'Name, email, and message are required' },
+        { error: 'Name, email, and message are required' }, 
         { status: 400 }
       );
     }
-
-    // Insert new contact submission
-    const { data, error } = await supabase
+    
+    // Insert the new contact submission
+    const { error } = await supabase
       .from('contact_submissions')
       .insert([
-        {
+        { 
           name: body.name,
           email: body.email,
           phone: body.phone || '',
           service: body.service || '',
           message: body.message,
-          read: false,
-        },
-      ])
-      .select();
-
+          read: false
+        }
+      ]);
+    
     if (error) {
+      console.error('Error inserting contact submission:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
+    
     // TODO: Send email notification to admin
 
-    return NextResponse.json(
-      { success: true, message: 'Contact form submitted successfully' },
-      { status: 201 }
-    );
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error submitting contact form:', error);
-    return NextResponse.json(
-      { error: 'An error occurred while submitting the contact form' },
-      { status: 500 }
-    );
+    console.error('Error in contact API:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 

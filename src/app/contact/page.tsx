@@ -80,8 +80,8 @@ export default function ContactPage() {
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
             Contact Us
           </h1>
-          <p className="text-xl text-white max-w-3xl mx-auto">
-            Get in touch for a free consultation and estimate
+          <p className="text-xl text-gray-700 mb-8">
+            We&apos;d love to hear from you! Fill out the form below and we&apos;ll get back to you as soon as possible.
           </p>
         </div>
       </section>
@@ -175,7 +175,7 @@ export default function ContactPage() {
               
               {submitSuccess ? (
                 <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
-                  <p>Thank you for your message! We'll get back to you as soon as possible.</p>
+                  <p>Thank you for your message! We&apos;ll get back to you as soon as possible.</p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -290,7 +290,7 @@ export default function ContactPage() {
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h3 className="text-xl font-bold mb-2">Do you offer free estimates?</h3>
               <p className="text-gray-700">
-                Yes, we provide free estimates for all of our services. Contact us to schedule a consultation, and we'll assess your property and provide a detailed quote.
+                Yes, we provide free estimates for all of our services. Contact us to schedule a consultation, and we&apos;ll assess your property and provide a detailed quote.
               </p>
             </div>
             
@@ -304,7 +304,7 @@ export default function ContactPage() {
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h3 className="text-xl font-bold mb-2">What areas do you service?</h3>
               <p className="text-gray-700">
-                We currently service Anytown and surrounding communities within a 30-mile radius. If you're unsure if you're within our service area, please contact us.
+                We currently service Anytown and surrounding communities within a 30-mile radius. If you&apos;re unsure if you&apos;re within our service area, please contact us.
               </p>
             </div>
             

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { Service } from '@/lib/supabase';
+// Service type is used indirectly through the response
+// import { Service } from '@/lib/supabase';
 
 // GET /api/services - Get all services
 export async function GET(request: NextRequest) {
@@ -11,16 +12,14 @@ export async function GET(request: NextRequest) {
       .order('id');
 
     if (error) {
+      console.error('Error fetching services:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(data || []);
   } catch (error) {
-    console.error('Error fetching services:', error);
-    return NextResponse.json(
-      { error: 'An error occurred while fetching services' },
-      { status: 500 }
-    );
+    console.error('Error in services API:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 

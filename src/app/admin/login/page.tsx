@@ -9,7 +9,7 @@ import { supabase, isLocalhost } from '@/lib/supabase';
 function DebugInfo() {
   const [cookieInfo, setCookieInfo] = useState('');
   const [sessionInfo, setSessionInfo] = useState('');
-  const [configInfo, setConfigInfo] = useState({
+  const [configInfo] = useState({
     url: process.env.NEXT_PUBLIC_SUPABASE_URL || 'Not found',
     keyStatus: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Key is set' : 'Key is missing',
   });
@@ -20,7 +20,7 @@ function DebugInfo() {
     setTestConnStatus('Testing...');
     try {
       // Check if we can connect to Supabase Auth API
-      const { data: authData, error: authError } = await supabase.auth.getSession();
+      const { error: authError } = await supabase.auth.getSession();
       
       if (authError) {
         setTestConnStatus(`Auth Error: ${authError.message}`);
@@ -29,7 +29,7 @@ function DebugInfo() {
       
       // Try to access the auth API info
       try {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
+        const { error: userError } = await supabase.auth.getUser();
         if (userError) {
           setTestConnStatus(`User API Error: ${userError.message}, but connection is working`);
           return;
@@ -110,7 +110,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [showDebug, setShowDebug] = useState(false);
   
-  const router = useRouter();
+  const _router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get('from') || '/admin/dashboard';
   const redirectCount = searchParams.get('redirectCount') || '0';

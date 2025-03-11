@@ -100,7 +100,7 @@ export default function AboutPage() {
               </div>
               <h3 className="text-xl font-bold text-center mb-4">Sustainability</h3>
               <p className="text-gray-700 text-center">
-                We're committed to environmentally responsible practices that protect our planet while creating beautiful outdoor spaces for our customers.
+                We&apos;re committed to environmentally responsible practices that protect our planet while creating beautiful outdoor spaces for our customers.
               </p>
             </div>
           </div>
@@ -165,7 +165,7 @@ export default function AboutPage() {
                 <h3 className="text-xl font-bold mb-1">Mike Williams</h3>
                 <p className="text-green-600 font-medium mb-4">Lead Landscaper</p>
                 <p className="text-gray-700 text-sm">
-                  Mike's creative vision and attention to detail bring our landscape designs to life with stunning results.
+                  Mike&apos;s creative vision and attention to detail bring our landscape designs to life with stunning results.
                 </p>
               </div>
             </div>
@@ -206,7 +206,7 @@ export default function AboutPage() {
                 </div>
               </div>
               <p className="italic mb-6">
-                "Lawn Care Pro has been maintaining our property for over 3 years now, and we couldn't be happier with their service. Our lawn has never looked better!"
+                &quot;Lawn Care Pro has been maintaining our property for over 3 years now, and we couldn&apos;t be happier with their service. Our lawn has never looked better!&quot;
               </p>
               <p className="font-bold">- Robert & Mary Johnson</p>
             </div>
@@ -219,7 +219,7 @@ export default function AboutPage() {
                 </div>
               </div>
               <p className="italic mb-6">
-                "The landscaping team transformed our backyard into a beautiful outdoor living space. Their attention to detail and creative ideas exceeded our expectations."
+                &quot;The landscaping team transformed our backyard into a beautiful outdoor living space. Their attention to detail and creative ideas exceeded our expectations.&quot;
               </p>
               <p className="font-bold">- Jennifer Adams</p>
             </div>
@@ -232,7 +232,7 @@ export default function AboutPage() {
                 </div>
               </div>
               <p className="italic mb-6">
-                "Professional, reliable, and thorough. They show up when they say they will and always leave our property looking immaculate. Highly recommended!"
+                &quot;Professional, reliable, and thorough. They show up when they say they will and always leave our property looking immaculate. Highly recommended!&quot;
               </p>
               <p className="font-bold">- David Wilson</p>
             </div>

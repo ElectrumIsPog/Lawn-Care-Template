@@ -115,7 +115,15 @@ export type UserSession = {
     id: string;
     email: string;
   } | null;
-  session: any | null;
+  session: {
+    access_token: string;
+    refresh_token?: string;
+    expires_at?: number;
+    user: {
+      id: string;
+      email: string;
+    }
+  } | null;
 };
 
 // Check if user is admin - simplified to just check if authenticated

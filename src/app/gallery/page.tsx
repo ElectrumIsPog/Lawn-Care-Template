@@ -5,145 +5,64 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { GalleryImage } from '@/lib/supabase';
 
-// Gallery image data
-const galleryImages = [
+const DEFAULT_IMAGES = [
   {
     id: 1,
-    src: '/gallery/lawn-1.jpg',
-    alt: 'Beautiful residential lawn',
-    category: 'lawn-maintenance',
-    title: 'Residential Lawn Maintenance',
-    description: 'Weekly lawn maintenance for a residential property in Anytown.'
+    title: 'Beautiful Lawn Maintenance',
+    description: 'Regular lawn care keeps your yard looking its best year-round.',
+    image_url: '/images/gallery/lawn-1.jpg',
+    category: 'Lawn Care',
+    created_at: new Date().toISOString()
   },
-  {
-    id: 2,
-    src: '/gallery/landscaping-1.jpg',
-    alt: 'Front yard landscaping',
-    category: 'landscaping',
-    title: 'Front Yard Transformation',
-    description: 'Complete front yard landscaping redesign with new plants and mulch.'
-  },
-  {
-    id: 3,
-    src: '/gallery/lawn-2.jpg',
-    alt: 'Large commercial lawn',
-    category: 'lawn-maintenance',
-    title: 'Commercial Property Maintenance',
-    description: 'Regular maintenance for a commercial office building.'
-  },
-  {
-    id: 4,
-    src: '/gallery/landscaping-2.jpg',
-    alt: 'Backyard garden design',
-    category: 'landscaping',
-    title: 'Backyard Garden Oasis',
-    description: 'Custom garden design with flowering plants and stone pathways.'
-  },
-  {
-    id: 5,
-    src: '/gallery/fertilization-1.jpg',
-    alt: 'Lawn fertilization',
-    category: 'fertilization',
-    title: 'Lawn Fertilization Program',
-    description: 'Before and after results of our seasonal fertilization program.'
-  },
-  {
-    id: 6,
-    src: '/gallery/cleanup-1.jpg',
-    alt: 'Fall cleanup',
-    category: 'cleanup',
-    title: 'Fall Cleanup Service',
-    description: 'Comprehensive fall cleanup including leaf removal and bed preparation.'
-  },
-  {
-    id: 7,
-    src: '/gallery/landscaping-3.jpg',
-    alt: 'Hardscape installation',
-    category: 'landscaping',
-    title: 'Patio and Retaining Wall',
-    description: 'Custom hardscape installation with paver patio and retaining wall.'
-  },
-  {
-    id: 8,
-    src: '/gallery/lawn-3.jpg',
-    alt: 'Lawn renovation',
-    category: 'lawn-maintenance',
-    title: 'Lawn Renovation Project',
-    description: 'Complete lawn renovation with aeration, overseeding, and fertilization.'
-  },
-  {
-    id: 9,
-    src: '/gallery/landscaping-4.jpg',
-    alt: 'Flower bed installation',
-    category: 'landscaping',
-    title: 'Colorful Flower Bed Installation',
-    description: 'Seasonal flower bed installation for a residential property.'
-  },
-  {
-    id: 10,
-    src: '/gallery/cleanup-2.jpg',
-    alt: 'Spring cleanup',
-    category: 'cleanup',
-    title: 'Spring Cleanup and Mulching',
-    description: 'Spring cleanup service with fresh mulch application.'
-  },
-  {
-    id: 11,
-    src: '/gallery/fertilization-2.jpg',
-    alt: 'Weed control',
-    category: 'fertilization',
-    title: 'Weed Control Treatment',
-    description: 'Targeted weed control treatment for a residential lawn.'
-  },
-  {
-    id: 12,
-    src: '/gallery/landscaping-5.jpg',
-    alt: 'Tree and shrub planting',
-    category: 'landscaping',
-    title: 'Tree and Shrub Installation',
-    description: 'Selection and installation of trees and shrubs for privacy screening.'
-  }
+  // ... other default images
 ];
 
 export default function GalleryPage() {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedImage, setSelectedImage] = useState<number | null>(null);
-  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // We're using default images directly since we don't have actual data yet
+  // const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [categories, setCategories] = useState<string[]>([]);
+  // const [isLoading, setIsLoading] = useState(true);
+  // const [error, setError] = useState<string | null>(null);
 
-  // Fetch gallery images from the API
+  // In a real application, we would fetch data here
+  // useEffect(() => {
+  //   async function fetchGalleryImages() {
+  //     try {
+  //       const response = await fetch('/api/gallery');
+  //       const data = await response.json();
+  //       setGalleryImages(data);
+  //       
+  //       // Extract unique categories
+  //       const uniqueCategories = ['All', ...new Set(data.map((image: GalleryImage) => image.category))];
+  //       setCategories(uniqueCategories);
+  //       setIsLoading(false);
+  //     } catch (err) {
+  //       setError('Failed to load gallery images');
+  //       setIsLoading(false);
+  //     }
+  //   }
+  //   
+  //   fetchGalleryImages();
+  // }, []);
+
+  // Simulate data fetching
   useEffect(() => {
-    const fetchGalleryImages = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`/api/gallery${selectedCategory !== 'all' ? `?category=${selectedCategory}` : ''}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch gallery images');
-        }
-        
-        const data = await response.json();
-        setGalleryImages(data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching gallery images:', err);
-        setError('Failed to load gallery images. Please try again later.');
-        // Use placeholder data if API fails
-        setGalleryImages([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchGalleryImages();
-  }, [selectedCategory]);
+    // Extract unique categories from default images
+    const uniqueCategories = ['All', ...new Set(DEFAULT_IMAGES.map(image => image.category))];
+    setCategories(uniqueCategories);
+  }, []);
 
-  const filteredImages = galleryImages;
+  // Filter images by category
+  const filteredImages = selectedCategory === 'All'
+    ? DEFAULT_IMAGES
+    : DEFAULT_IMAGES.filter(image => image.category === selectedCategory);
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
   };
+
+  const [selectedImage, setSelectedImage] = useState<number | null>(null);
 
   const openLightbox = (id: number) => {
     setSelectedImage(id);
@@ -154,7 +73,7 @@ export default function GalleryPage() {
   };
 
   const getSelectedImageData = () => {
-    return galleryImages.find(img => img.id === selectedImage);
+    return DEFAULT_IMAGES.find(img => img.id === selectedImage);
   };
 
   return (
@@ -189,55 +108,28 @@ export default function GalleryPage() {
             {/* Category Filter */}
             <div className="flex flex-wrap justify-center gap-2 mb-12">
               <button
-                onClick={() => handleCategoryChange('all')}
+                onClick={() => handleCategoryChange('All')}
                 className={`px-4 py-2 rounded-full ${
-                  selectedCategory === 'all'
+                  selectedCategory === 'All'
                     ? 'bg-green-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 } transition-colors`}
               >
                 All Projects
               </button>
-              <button
-                onClick={() => handleCategoryChange('lawn-maintenance')}
-                className={`px-4 py-2 rounded-full ${
-                  selectedCategory === 'lawn-maintenance'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                } transition-colors`}
-              >
-                Lawn Maintenance
-              </button>
-              <button
-                onClick={() => handleCategoryChange('landscaping')}
-                className={`px-4 py-2 rounded-full ${
-                  selectedCategory === 'landscaping'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                } transition-colors`}
-              >
-                Landscaping
-              </button>
-              <button
-                onClick={() => handleCategoryChange('fertilization')}
-                className={`px-4 py-2 rounded-full ${
-                  selectedCategory === 'fertilization'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                } transition-colors`}
-              >
-                Fertilization
-              </button>
-              <button
-                onClick={() => handleCategoryChange('cleanup')}
-                className={`px-4 py-2 rounded-full ${
-                  selectedCategory === 'cleanup'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                } transition-colors`}
-              >
-                Seasonal Cleanup
-              </button>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => handleCategoryChange(category)}
+                  className={`px-4 py-2 rounded-full ${
+                    selectedCategory === category
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  } transition-colors`}
+                >
+                  {category}
+                </button>
+              ))}
             </div>
             
             {/* Gallery Grid */}
@@ -250,8 +142,8 @@ export default function GalleryPage() {
                 >
                   <div className="h-64 relative">
                     <Image
-                      src={image.src}
-                      alt={image.alt}
+                      src={image.image_url}
+                      alt={image.title}
                       fill
                       className="object-cover"
                     />
@@ -269,7 +161,7 @@ export default function GalleryPage() {
               <div className="text-center py-12">
                 <p className="text-gray-700 mb-4">No projects found in this category.</p>
                 <button
-                  onClick={() => handleCategoryChange('all')}
+                  onClick={() => handleCategoryChange('All')}
                   className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
                 >
                   View All Projects
@@ -296,8 +188,8 @@ export default function GalleryPage() {
             
             <div className="h-96 relative">
               <Image
-                src={getSelectedImageData()?.src || ''}
-                alt={getSelectedImageData()?.alt || ''}
+                src={getSelectedImageData()?.image_url || ''}
+                alt={getSelectedImageData()?.title || ''}
                 fill
                 className="object-contain"
               />

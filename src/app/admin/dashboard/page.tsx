@@ -15,7 +15,15 @@ interface DashboardStats {
 
 // Debug component to display session info
 function SessionDebug() {
-  const [sessionInfo, setSessionInfo] = useState<any>(null);
+  const [sessionInfo, setSessionInfo] = useState<{
+    session: {
+      user?: {
+        email?: string;
+        id?: string;
+      };
+      expires_at?: number;
+    } | null;
+  } | null>(null);
   const [cookies, setCookies] = useState<string>('');
 
   useEffect(() => {
@@ -92,7 +100,7 @@ export default function AdminDashboardPage() {
             ...prev,
             totalServices: servicesData.length || 0,
             totalGalleryImages: galleryData.length || 0,
-            unreadContactSubmissions: contactData.filter((submission: any) => !submission.read).length || 0,
+            unreadContactSubmissions: contactData.filter((submission: {read: boolean}) => !submission.read).length || 0,
           }));
           
         } catch (err) {

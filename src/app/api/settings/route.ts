@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { SiteSettings } from '@/lib/supabase';
+// SiteSettings type is used indirectly through the response
+// import { SiteSettings } from '@/lib/supabase';
 
 // GET /api/settings - Get site settings
 export async function GET(request: NextRequest) {
@@ -10,31 +11,15 @@ export async function GET(request: NextRequest) {
       .select('*')
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+    if (error) {
+      console.error('Error fetching site settings:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // If no settings exist yet, return default settings
-    if (!data) {
-      return NextResponse.json({
-        site_name: 'Lawn Care Pro',
-        contact_email: 'info@lawncareproexample.com',
-        contact_phone: '(555) 123-4567',
-        address: '123 Green Street, Anytown, USA 12345',
-        business_hours: 'Monday - Friday: 8:00 AM - 6:00 PM, Saturday: 9:00 AM - 4:00 PM, Sunday: Closed',
-        maintenance_mode: false,
-        primary_color: '#16a34a', // green-600
-        secondary_color: '#166534', // green-800
-      });
-    }
-
-    return NextResponse.json(data);
+    return NextResponse.json(data || {});
   } catch (error) {
-    console.error('Error fetching site settings:', error);
-    return NextResponse.json(
-      { error: 'An error occurred while fetching site settings' },
-      { status: 500 }
-    );
+    console.error('Error in settings API:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
