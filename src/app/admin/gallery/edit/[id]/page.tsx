@@ -10,10 +10,24 @@ import { GalleryImage } from '@/lib/supabase';
 export default function EditGalleryImagePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
-  const { id } = params;
+  const [imageId, setImageId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    async function extractId() {
+      try {
+        const resolvedParams = await params;
+        setImageId(resolvedParams.id);
+      } catch (error) {
+        console.error("Error extracting ID from params:", error);
+        setError("Invalid image ID");
+      }
+    }
+    
+    extractId();
+  }, [params]);
   
   const [image, setImage] = useState<GalleryImage | null>(null);
   const [title, setTitle] = useState('');
@@ -25,12 +39,13 @@ export default function EditGalleryImagePage({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch gallery image data
   useEffect(() => {
+    if (!imageId) return;
+    
     const fetchImage = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`/api/gallery/${id}`);
+        const response = await fetch(`/api/gallery/${imageId}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch gallery image');
@@ -52,20 +67,17 @@ export default function EditGalleryImagePage({
     };
     
     fetchImage();
-  }, [id]);
+  }, [imageId]);
 
-  // Handle image selection
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check file type
     if (!file.type.includes('image/')) {
       setError('Please select an image file');
       return;
     }
 
-    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError('Image size should be less than 5MB');
       return;
@@ -74,7 +86,6 @@ export default function EditGalleryImagePage({
     setImageFile(file);
     setError(null);
 
-    // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setImagePreview(reader.result as string);
@@ -82,11 +93,14 @@ export default function EditGalleryImagePage({
     reader.readAsDataURL(file);
   };
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form
+    if (!imageId) {
+      setError('Image ID not found');
+      return;
+    }
+    
     if (!title || !category) {
       setError('Please fill in all required fields');
       return;
@@ -96,11 +110,9 @@ export default function EditGalleryImagePage({
       setIsSaving(true);
       setError(null);
 
-      // Only upload new image if file is selected
       let imageUrl = image?.image_url;
       
       if (imageFile) {
-        // Upload image to Supabase Storage
         const fileName = `gallery/${Date.now()}-${imageFile.name}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('images')
@@ -110,7 +122,6 @@ export default function EditGalleryImagePage({
           throw new Error(`Error uploading image: ${uploadError.message}`);
         }
 
-        // Get public URL for the uploaded image
         const { data: publicUrlData } = supabase.storage
           .from('images')
           .getPublicUrl(fileName);
@@ -122,8 +133,7 @@ export default function EditGalleryImagePage({
         imageUrl = publicUrlData.publicUrl;
       }
 
-      // Update gallery image in database
-      const response = await fetch(`/api/gallery/${id}`, {
+      const response = await fetch(`/api/gallery/${imageId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -141,7 +151,6 @@ export default function EditGalleryImagePage({
         throw new Error(errorData.error || 'Failed to update gallery image');
       }
 
-      // Redirect to gallery management page
       router.push('/admin/gallery');
     } catch (err: any) {
       console.error('Error updating gallery image:', err);
