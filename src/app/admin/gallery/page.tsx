@@ -29,7 +29,7 @@ export default function GalleryPage() {
         setImages(data);
         
         // Extract unique categories
-        const uniqueCategories = Array.from(new Set(data.map((image: GalleryImage) => image.category)));
+        const uniqueCategories = Array.from(new Set(data.map((image: GalleryImage) => image.category))) as string[];
         setCategories(uniqueCategories);
         
         setError(null);
