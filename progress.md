@@ -47,9 +47,9 @@ This project is a template website for a lawn care business, featuring both cust
 - [x] Implement authentication protection for admin routes
 - [x] Develop admin features:
   - [x] Service and pricing management
-  - [ ] Photo gallery management
-  - [ ] Site settings control (maintenance mode, colors, etc.)
-  - [ ] Contact form submission viewing
+  - [x] Photo gallery management
+  - [x] Site settings control (maintenance mode, colors, etc.)
+  - [x] Contact form submission viewing
 
 ### Testing
 - [ ] Unit testing for components
@@ -63,4 +63,4 @@ This project is a template website for a lawn care business, featuring both cust
 - [x] Deployment instructions
 
 ## Current Focus
-Working on the admin panel features. Completed the admin dashboard layout, authentication protection for admin routes, and service management functionality. Next steps include implementing the remaining admin features: gallery management, site settings control, and contact form submission viewing. 
+All admin panel features have been completed, including gallery management, site settings control, and contact form submission viewing. The next steps will focus on testing and documentation to ensure the website is robust and user-friendly. 

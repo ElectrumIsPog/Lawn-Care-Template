@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { checkApiAuth } from '@/lib/apiAuth';
 // Service type is used indirectly through the response
 // import { Service } from '@/lib/supabase';
 
-// GET /api/services - Get all services
+// GET /api/services - Get all services (public)
 export async function GET(request: NextRequest) {
   try {
     const { data, error } = await supabase
@@ -26,6 +27,12 @@ export async function GET(request: NextRequest) {
 // POST /api/services - Create a new service (admin only)
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication for admin access
+    const authResponse = await checkApiAuth(request);
+    if (authResponse) {
+      return authResponse;
+    }
+    
     const body = await request.json();
     
     // Validate request body

@@ -1,53 +1,26 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
-// Environment logging for debugging
-export const logSupabaseConfig = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  console.log('Supabase Config - Environment:', process.env.NODE_ENV);
-  console.log('Supabase Config - URL:', supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'Not set');
-  console.log('Supabase Config - Key:', supabaseAnonKey ? 'Key is set' : 'Key is not set');
-  
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase environment variables. Check your .env.local file.');
-    return false;
-  }
-  
-  return true;
-}
-
-// Create a Supabase client
-export const createClient = () => {
-  logSupabaseConfig();
-  
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  
-  return createSupabaseClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: false,
-        storageKey: 'supabase.auth.token',
-        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-        flowType: 'pkce',
-        debug: process.env.NODE_ENV !== 'production'
-      }
-    }
-  );
-}
-
-// Export a singleton instance for direct use
-export const supabase = createClient();
-
-// Determine if we're running on localhost
+// Check if we're in a localhost environment
 export const isLocalhost = 
   typeof window !== 'undefined' && 
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+// Get environment variables
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+// Create Supabase client with reduced logging in production
+const supabaseOptions = {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+    debug: isLocalhost && process.env.NODE_ENV !== 'production',
+  }
+};
+
+// Create Supabase client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, supabaseOptions);
 
 // Types for Supabase tables
 export type Service = {

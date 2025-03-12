@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { checkApiAuth } from '@/lib/apiAuth';
 // GalleryImage type is used indirectly through the response
 // import { GalleryImage } from '@/lib/supabase';
 
@@ -39,6 +40,12 @@ export async function GET(request: NextRequest) {
 // POST /api/gallery - Upload a new gallery image (admin only)
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const authResponse = await checkApiAuth(request);
+    if (authResponse) {
+      return authResponse;
+    }
+    
     const body = await request.json();
     
     // Validate request body

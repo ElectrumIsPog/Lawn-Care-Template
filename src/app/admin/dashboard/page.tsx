@@ -25,12 +25,30 @@ function SessionDebug() {
     } | null;
   } | null>(null);
   const [cookies, setCookies] = useState<string>('');
+  const [localStorageAuth, setLocalStorageAuth] = useState<string | null>(null);
 
   useEffect(() => {
     async function getDebugInfo() {
       const { data } = await supabase.auth.getSession();
       setSessionInfo(data);
       setCookies(document.cookie);
+      
+      // Check localStorage for auth tokens - commonly used by Supabase
+      if (typeof window !== 'undefined') {
+        try {
+          // Check common Supabase token locations in localStorage
+          const lsKeys = ['supabase.auth.token', 'sb-access-token', 'sb-refresh-token'];
+          for (const key of lsKeys) {
+            const token = localStorage.getItem(key);
+            if (token) {
+              setLocalStorageAuth(`Found auth in localStorage (${key})`);
+              break;
+            }
+          }
+        } catch (e) {
+          console.warn('Could not check localStorage auth:', e);
+        }
+      }
     }
     getDebugInfo();
   }, []);
@@ -40,6 +58,7 @@ function SessionDebug() {
       <h3 className="text-gray-700 font-bold mb-2">Session Debug (Admin Only)</h3>
       <p className="mb-1"><strong>Environment:</strong> {isLocalhost ? 'Localhost' : 'Production'}</p>
       <p className="mb-1"><strong>Cookies:</strong> {cookies || 'No cookies found'}</p>
+      <p className="mb-1"><strong>LocalStorage Auth:</strong> {localStorageAuth || 'No localStorage auth found'}</p>
       <p className="mb-1"><strong>Session Status:</strong> {sessionInfo?.session ? 'Active' : 'None'}</p>
       {sessionInfo?.session && (
         <div>
@@ -64,6 +83,12 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [showDebug, setShowDebug] = useState(false);
   const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // Set isClient to true on mount to prevent hydration mismatch
+    setIsClient(true);
+  }, []);
 
   // Check authentication and fetch data
   useEffect(() => {
@@ -134,7 +159,7 @@ export default function AdminDashboardPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">
-            Admin Dashboard {isLocalhost && '(Localhost)'}
+            Admin Dashboard {isClient && isLocalhost ? '(Localhost)' : ''}
           </h2>
           {stats.userEmail && (
             <p className="text-sm text-gray-600">Logged in as: {stats.userEmail}</p>
@@ -162,7 +187,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
       
-      {isLocalhost && (
+      {isClient && isLocalhost && (
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-6 text-sm">
           <strong>Localhost Environment:</strong> Using standard Supabase client for authentication.
         </div>
@@ -249,21 +274,19 @@ export default function AdminDashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <span className="font-medium">Edit Settings</span>
+            <span className="font-medium">Site Settings</span>
           </Link>
 
           <Link 
-            href="/" 
-            target="_blank"
+            href="/admin/contact" 
             className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow flex items-center"
           >
             <div className="bg-green-100 p-3 rounded-full mr-4">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <span className="font-medium">View Website</span>
+            <span className="font-medium">Contact Messages</span>
           </Link>
         </div>
       </div>

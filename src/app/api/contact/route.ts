@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { checkApiAuth } from '@/lib/apiAuth';
 // We're using the type indirectly through the response
 // import { ContactSubmission } from '@/lib/supabase';
 
 // GET /api/contact - Get all contact form submissions (admin only)
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Add authentication check for admin access
+    // Check authentication for admin access
+    const authResponse = await checkApiAuth(request);
+    if (authResponse) {
+      return authResponse;
+    }
     
     const { data, error } = await supabase
       .from('contact_submissions')
@@ -25,7 +30,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/contact - Submit a new contact form
+// POST /api/contact - Submit a new contact form (public)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -66,10 +71,14 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/contact/:id - Mark a contact submission as read (admin only)
+// PUT /api/contact - Mark a contact submission as read (admin only)
 export async function PUT(request: NextRequest) {
   try {
-    // TODO: Add authentication check for admin access
+    // Check authentication for admin access
+    const authResponse = await checkApiAuth(request);
+    if (authResponse) {
+      return authResponse;
+    }
     
     const body = await request.json();
     

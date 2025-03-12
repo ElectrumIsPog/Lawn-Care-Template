@@ -2,16 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { checkApiAuth } from '@/lib/apiAuth';
 
-// GET /api/services/:id - Get a specific service (public)
+// GET /api/contact/[id] - Get a specific contact submission (admin only)
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    // Check authentication for admin access
+    const authResponse = await checkApiAuth(request);
+    if (authResponse) {
+      return authResponse;
+    }
+    
+    const id = params.id;
     
     const { data, error } = await supabase
-      .from('services')
+      .from('contact_submissions')
       .select('*')
       .eq('id', id)
       .single();
@@ -21,23 +27,23 @@ export async function GET(
     }
 
     if (!data) {
-      return NextResponse.json({ error: 'Service not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Contact submission not found' }, { status: 404 });
     }
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching service:', error);
+    console.error('Error fetching contact submission:', error);
     return NextResponse.json(
-      { error: 'An error occurred while fetching the service' },
+      { error: 'An error occurred while fetching the contact submission' },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/services/:id - Update a service (admin only)
+// PUT /api/contact/[id] - Update a contact submission (admin only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Check authentication for admin access
@@ -46,27 +52,14 @@ export async function PUT(
       return authResponse;
     }
     
-    const { id } = await params;
+    const id = params.id;
     const body = await request.json();
     
-    // Validate request body
-    if (!body.name || !body.description || !body.category) {
-      return NextResponse.json(
-        { error: 'Name, description, and category are required' },
-        { status: 400 }
-      );
-    }
-
-    // Update service
+    // Update contact submission
     const { data, error } = await supabase
-      .from('services')
+      .from('contact_submissions')
       .update({
-        name: body.name,
-        description: body.description,
-        price_range: body.price_range || '',
-        features: body.features || [],
-        image_url: body.image_url || '',
-        category: body.category,
+        read: body.read === true,
       })
       .eq('id', id)
       .select();
@@ -76,23 +69,23 @@ export async function PUT(
     }
 
     if (data.length === 0) {
-      return NextResponse.json({ error: 'Service not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Contact submission not found' }, { status: 404 });
     }
 
     return NextResponse.json(data[0]);
   } catch (error) {
-    console.error('Error updating service:', error);
+    console.error('Error updating contact submission:', error);
     return NextResponse.json(
-      { error: 'An error occurred while updating the service' },
+      { error: 'An error occurred while updating the contact submission' },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/services/:id - Delete a service (admin only)
+// DELETE /api/contact/[id] - Delete a contact submission (admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     // Check authentication for admin access
@@ -101,10 +94,10 @@ export async function DELETE(
       return authResponse;
     }
     
-    const { id } = await params;
+    const id = params.id;
     
     const { error } = await supabase
-      .from('services')
+      .from('contact_submissions')
       .delete()
       .eq('id', id);
 
@@ -114,9 +107,9 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting service:', error);
+    console.error('Error deleting contact submission:', error);
     return NextResponse.json(
-      { error: 'An error occurred while deleting the service' },
+      { error: 'An error occurred while deleting the contact submission' },
       { status: 500 }
     );
   }

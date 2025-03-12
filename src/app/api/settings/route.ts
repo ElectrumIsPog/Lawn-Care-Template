@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { checkApiAuth } from '@/lib/apiAuth';
 // SiteSettings type is used indirectly through the response
 // import { SiteSettings } from '@/lib/supabase';
 
 // GET /api/settings - Get site settings
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const { data, error } = await supabase
       .from('site_settings')
@@ -12,83 +13,60 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error fetching site settings:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data || {});
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error in settings API:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error fetching site settings:', error);
+    return NextResponse.json(
+      { error: 'An error occurred while fetching site settings' },
+      { status: 500 }
+    );
   }
 }
 
 // PUT /api/settings - Update site settings (admin only)
 export async function PUT(request: NextRequest) {
   try {
+    // Check authentication
+    const authResponse = await checkApiAuth(request);
+    if (authResponse) {
+      return authResponse;
+    }
+    
     const body = await request.json();
     
-    // Check if settings already exist
-    const { data: existingSettings, error: fetchError } = await supabase
-      .from('site_settings')
-      .select('id')
-      .single();
-    
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      return NextResponse.json({ error: fetchError.message }, { status: 500 });
-    }
-    
-    let result;
-    
-    if (existingSettings) {
-      // Update existing settings
-      const { data, error } = await supabase
-        .from('site_settings')
-        .update({
-          site_name: body.site_name,
-          contact_email: body.contact_email,
-          contact_phone: body.contact_phone,
-          address: body.address,
-          business_hours: body.business_hours,
-          maintenance_mode: body.maintenance_mode,
-          primary_color: body.primary_color,
-          secondary_color: body.secondary_color,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingSettings.id)
-        .select();
-      
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-      
-      result = data[0];
-    } else {
-      // Insert new settings
-      const { data, error } = await supabase
-        .from('site_settings')
-        .insert([
-          {
-            site_name: body.site_name || 'Lawn Care Pro',
-            contact_email: body.contact_email || 'info@lawncareproexample.com',
-            contact_phone: body.contact_phone || '(555) 123-4567',
-            address: body.address || '123 Green Street, Anytown, USA 12345',
-            business_hours: body.business_hours || 'Monday - Friday: 8:00 AM - 6:00 PM, Saturday: 9:00 AM - 4:00 PM, Sunday: Closed',
-            maintenance_mode: body.maintenance_mode || false,
-            primary_color: body.primary_color || '#16a34a',
-            secondary_color: body.secondary_color || '#166534',
-          },
-        ])
-        .select();
-      
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-      
-      result = data[0];
+    // Validate request body
+    if (!body.site_name) {
+      return NextResponse.json(
+        { error: 'Site name is required' },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json(result);
+    // Update site settings
+    const { data, error } = await supabase
+      .from('site_settings')
+      .update({
+        site_name: body.site_name,
+        contact_email: body.contact_email || '',
+        contact_phone: body.contact_phone || '',
+        address: body.address || '',
+        business_hours: body.business_hours || '',
+        maintenance_mode: body.maintenance_mode === true,
+        primary_color: body.primary_color || '#16a34a', // Default green-600
+        secondary_color: body.secondary_color || '#1e40af', // Default blue-800
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', 1) // Assuming there's only one settings record with ID 1
+      .select();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data[0]);
   } catch (error) {
     console.error('Error updating site settings:', error);
     return NextResponse.json(

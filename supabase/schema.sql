@@ -48,28 +48,71 @@ CREATE TABLE IF NOT EXISTS contact_submissions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create RLS policies
--- Note: These policies should be adjusted based on your authentication setup
+-- Create RLS policies with stronger authentication requirements
+
+-- Services table policies
+ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to services
-ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access to services" ON services
   FOR SELECT USING (true);
 
--- Allow public read access to gallery images
+-- Allow authenticated users (admins) to insert, update, delete services
+CREATE POLICY "Allow authenticated users to insert services" ON services
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+  
+CREATE POLICY "Allow authenticated users to update services" ON services
+  FOR UPDATE USING (auth.role() = 'authenticated');
+  
+CREATE POLICY "Allow authenticated users to delete services" ON services
+  FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Gallery images table policies
 ALTER TABLE gallery_images ENABLE ROW LEVEL SECURITY;
+
+-- Allow public read access to gallery images
 CREATE POLICY "Allow public read access to gallery images" ON gallery_images
   FOR SELECT USING (true);
+  
+-- Allow authenticated users (admins) to insert, update, delete gallery images
+CREATE POLICY "Allow authenticated users to insert gallery images" ON gallery_images
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+  
+CREATE POLICY "Allow authenticated users to update gallery images" ON gallery_images
+  FOR UPDATE USING (auth.role() = 'authenticated');
+  
+CREATE POLICY "Allow authenticated users to delete gallery images" ON gallery_images
+  FOR DELETE USING (auth.role() = 'authenticated');
+
+-- Site settings table policies
+ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to site settings
-ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access to site settings" ON site_settings
   FOR SELECT USING (true);
+  
+-- Allow authenticated users (admins) to update site settings
+CREATE POLICY "Allow authenticated users to update site settings" ON site_settings
+  FOR UPDATE USING (auth.role() = 'authenticated');
 
--- Allow public to submit contact forms
+-- Contact submissions table policies
 ALTER TABLE contact_submissions ENABLE ROW LEVEL SECURITY;
+
+-- Allow public to submit contact forms (insert only)
 CREATE POLICY "Allow public to submit contact forms" ON contact_submissions
   FOR INSERT WITH CHECK (true);
+  
+-- Allow authenticated users (admins) to view contact submissions
+CREATE POLICY "Allow authenticated users to view contact submissions" ON contact_submissions
+  FOR SELECT USING (auth.role() = 'authenticated');
+  
+-- Allow authenticated users (admins) to update contact submissions (mark as read)
+CREATE POLICY "Allow authenticated users to update contact submissions" ON contact_submissions
+  FOR UPDATE USING (auth.role() = 'authenticated');
+  
+-- Allow authenticated users (admins) to delete contact submissions
+CREATE POLICY "Allow authenticated users to delete contact submissions" ON contact_submissions
+  FOR DELETE USING (auth.role() = 'authenticated');
 
 -- Sample data for services
 INSERT INTO services (name, description, price_range, features, image_url, category)

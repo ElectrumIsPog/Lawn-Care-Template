@@ -2,16 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { checkApiAuth } from '@/lib/apiAuth';
 
-// GET /api/services/:id - Get a specific service (public)
+// GET /api/gallery/[id] - Get a specific gallery image
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const id = params.id;
     
     const { data, error } = await supabase
-      .from('services')
+      .from('gallery_images')
       .select('*')
       .eq('id', id)
       .single();
@@ -21,51 +21,49 @@ export async function GET(
     }
 
     if (!data) {
-      return NextResponse.json({ error: 'Service not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Gallery image not found' }, { status: 404 });
     }
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching service:', error);
+    console.error('Error fetching gallery image:', error);
     return NextResponse.json(
-      { error: 'An error occurred while fetching the service' },
+      { error: 'An error occurred while fetching the gallery image' },
       { status: 500 }
     );
   }
 }
 
-// PUT /api/services/:id - Update a service (admin only)
+// PUT /api/gallery/[id] - Update a specific gallery image (admin only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    // Check authentication for admin access
+    // Check authentication
     const authResponse = await checkApiAuth(request);
     if (authResponse) {
       return authResponse;
     }
     
-    const { id } = await params;
+    const id = params.id;
     const body = await request.json();
     
     // Validate request body
-    if (!body.name || !body.description || !body.category) {
+    if (!body.title || !body.image_url || !body.category) {
       return NextResponse.json(
-        { error: 'Name, description, and category are required' },
+        { error: 'Title, image URL, and category are required' },
         { status: 400 }
       );
     }
 
-    // Update service
+    // Update gallery image
     const { data, error } = await supabase
-      .from('services')
+      .from('gallery_images')
       .update({
-        name: body.name,
-        description: body.description,
-        price_range: body.price_range || '',
-        features: body.features || [],
-        image_url: body.image_url || '',
+        title: body.title,
+        description: body.description || '',
+        image_url: body.image_url,
         category: body.category,
       })
       .eq('id', id)
@@ -76,35 +74,35 @@ export async function PUT(
     }
 
     if (data.length === 0) {
-      return NextResponse.json({ error: 'Service not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Gallery image not found' }, { status: 404 });
     }
 
     return NextResponse.json(data[0]);
   } catch (error) {
-    console.error('Error updating service:', error);
+    console.error('Error updating gallery image:', error);
     return NextResponse.json(
-      { error: 'An error occurred while updating the service' },
+      { error: 'An error occurred while updating the gallery image' },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/services/:id - Delete a service (admin only)
+// DELETE /api/gallery/[id] - Delete a specific gallery image (admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    // Check authentication for admin access
+    // Check authentication
     const authResponse = await checkApiAuth(request);
     if (authResponse) {
       return authResponse;
     }
     
-    const { id } = await params;
+    const id = params.id;
     
     const { error } = await supabase
-      .from('services')
+      .from('gallery_images')
       .delete()
       .eq('id', id);
 
@@ -114,9 +112,9 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting service:', error);
+    console.error('Error deleting gallery image:', error);
     return NextResponse.json(
-      { error: 'An error occurred while deleting the service' },
+      { error: 'An error occurred while deleting the gallery image' },
       { status: 500 }
     );
   }
