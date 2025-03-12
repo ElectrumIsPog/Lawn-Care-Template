@@ -18,6 +18,23 @@ export async function checkApiAuth(request: NextRequest): Promise<NextResponse |
       return null; // Allow the request through for localhost in dev mode
     }
     
+    // Always allow development mode OPTIONS requests for CORS
+    if (request.method === 'OPTIONS' && isLocalhost) {
+      return null;
+    }
+    
+    // Get URL to check if it's a path we want to be more lenient with
+    const url = new URL(request.url);
+    const isReadOnlyEndpoint = 
+      (request.method === 'GET') && 
+      (url.pathname.includes('/api/services') || url.pathname.includes('/api/gallery'));
+    
+    // Be more lenient with read-only endpoints in development
+    if (isLocalhost && isReadOnlyEndpoint) {
+      console.log('Allowing read-only API access in dev mode without strict auth checks');
+      return null;
+    }
+    
     // Get Supabase environment variables
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

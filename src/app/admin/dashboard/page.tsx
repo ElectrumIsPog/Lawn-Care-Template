@@ -127,7 +127,9 @@ export default function AdminDashboardPage() {
             ...prev,
             totalServices: servicesData.length || 0,
             totalGalleryImages: galleryData.length || 0,
-            unreadContactSubmissions: contactData.filter((submission: {read: boolean}) => !submission.read).length || 0,
+            unreadContactSubmissions: Array.isArray(contactData) 
+              ? contactData.filter((submission: {read: boolean}) => !submission.read).length 
+              : 0,
           }));
           
         } catch (err) {

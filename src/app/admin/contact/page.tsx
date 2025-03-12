@@ -25,7 +25,16 @@ export default function ContactSubmissionsPage() {
         }
         
         const data = await response.json();
-        setSubmissions(data);
+        
+        // Ensure data is an array before setting state
+        if (Array.isArray(data)) {
+          setSubmissions(data);
+        } else {
+          console.error('Expected array but received:', data);
+          setError('Received invalid data format from the server. Please try again later.');
+          setSubmissions([]);
+        }
+        
         setError(null);
       } catch (err) {
         console.error('Error fetching contact submissions:', err);
