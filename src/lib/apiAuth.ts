@@ -80,6 +80,15 @@ export async function checkApiAuth(request: NextRequest): Promise<NextResponse |
     const authHeader = request.headers.get('authorization');
     const hasAuthHeader = authHeader && authHeader.startsWith('Bearer ');
     
+    // Debug auth info in production when debug flag is enabled
+    const debugAuth = process.env.NEXT_PUBLIC_DEBUG_AUTH === 'true';
+    if (debugAuth) {
+      console.log('API Auth - URL:', url.pathname);
+      console.log('API Auth - Auth Header Present:', !!authHeader);
+      console.log('API Auth - Auth Cookie Present:', !!authCookieValue);
+      console.log('API Auth - Cookies:', request.cookies.getAll().map(c => c.name).join(', '));
+    }
+    
     // Note: Since this is server-side code, we can't check localStorage directly
     // But the Supabase client should attempt to use any session that is available
 
@@ -107,6 +116,10 @@ export async function checkApiAuth(request: NextRequest): Promise<NextResponse |
           Authorization: authHeader
         }
       };
+      
+      if (debugAuth) {
+        console.log('API Auth - Using Authorization header for auth');
+      }
     }
     
     const supabase = createClient(supabaseUrl, supabaseAnonKey, supabaseClientOptions);

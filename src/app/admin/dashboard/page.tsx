@@ -106,20 +106,30 @@ export default function AdminDashboardPage() {
           return;
         }
 
+        // Get access token for API requests
+        const accessToken = session.access_token;
+        
         setStats(prev => ({...prev, userEmail: session.user?.email || null}));
         
         // Fetch dashboard statistics
         try {
+          // Common fetch options with auth header
+          const fetchOptions = {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`
+            }
+          };
+          
           // Fetch services count
-          const servicesResponse = await fetch('/api/services');
+          const servicesResponse = await fetch('/api/services', fetchOptions);
           const servicesData = await servicesResponse.json();
           
           // Fetch gallery images count
-          const galleryResponse = await fetch('/api/gallery');
+          const galleryResponse = await fetch('/api/gallery', fetchOptions);
           const galleryData = await galleryResponse.json();
           
           // Fetch contact submissions
-          const contactResponse = await fetch('/api/contact');
+          const contactResponse = await fetch('/api/contact', fetchOptions);
           const contactData = await contactResponse.json();
           
           // Set stats

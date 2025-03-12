@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ContactSubmission } from '@/lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '@/lib/supabase';
 
 export default function ContactSubmissionsPage() {
   const [submissions, setSubmissions] = useState<ContactSubmission[]>([]);
@@ -12,13 +13,32 @@ export default function ContactSubmissionsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  // Get auth token on component mount
+  useEffect(() => {
+    const getAuthToken = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        setAccessToken(data.session.access_token);
+      }
+    };
+    getAuthToken();
+  }, []);
 
   // Fetch contact submissions
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/contact');
+        
+        // Set up authorization header if we have a token
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+        
+        const response = await fetch('/api/contact', { headers });
         
         if (!response.ok) {
           throw new Error('Failed to fetch contact submissions');
@@ -45,7 +65,7 @@ export default function ContactSubmissionsPage() {
     };
     
     fetchSubmissions();
-  }, []);
+  }, [accessToken]);
 
   // View submission details
   const viewSubmission = async (submission: ContactSubmission) => {
@@ -55,11 +75,14 @@ export default function ContactSubmissionsPage() {
     // Mark as read if not already read
     if (!submission.read) {
       try {
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+        
         const response = await fetch(`/api/contact/${submission.id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           body: JSON.stringify({
             read: true,
           }),
@@ -89,8 +112,14 @@ export default function ContactSubmissionsPage() {
     if (!deleteId) return;
     
     try {
+      const headers: HeadersInit = { 'Content-Type': 'application/json' };
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+      
       const response = await fetch(`/api/contact/${deleteId}`, {
         method: 'DELETE',
+        headers,
       });
       
       if (!response.ok) {
