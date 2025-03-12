@@ -7,14 +7,29 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { GalleryImage } from '@/lib/supabase';
 
+// Define the params type explicitly to match what Next.js 15.2.1 expects
+interface PageParams {
+  id: string;
+}
+
 export default function EditGalleryImagePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<PageParams>;
 }) {
   const router = useRouter();
   const [imageId, setImageId] = useState<string | null>(null);
+  const [image, setImage] = useState<GalleryImage | null>(null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
+  // Extract the ID from params
   useEffect(() => {
     async function extractId() {
       try {
@@ -29,16 +44,7 @@ export default function EditGalleryImagePage({
     extractId();
   }, [params]);
   
-  const [image, setImage] = useState<GalleryImage | null>(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  // Fetch gallery image data
   useEffect(() => {
     if (!imageId) return;
     
@@ -69,6 +75,7 @@ export default function EditGalleryImagePage({
     fetchImage();
   }, [imageId]);
 
+  // Handle image selection
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -93,6 +100,7 @@ export default function EditGalleryImagePage({
     reader.readAsDataURL(file);
   };
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     

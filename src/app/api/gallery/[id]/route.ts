@@ -2,13 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { checkApiAuth } from '@/lib/apiAuth';
 
+// Define the params type for gallery item ID
+interface GalleryIdParams {
+  id: string;
+}
+
 // GET /api/gallery/[id] - Get a specific gallery image
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<GalleryIdParams> }
 ) {
   try {
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     
     const { data, error } = await supabase
       .from('gallery_images')
@@ -37,7 +43,7 @@ export async function GET(
 // PUT /api/gallery/[id] - Update a specific gallery image (admin only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<GalleryIdParams> }
 ) {
   try {
     // Check authentication
@@ -46,7 +52,8 @@ export async function PUT(
       return authResponse;
     }
     
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     const body = await request.json();
     
     // Validate request body
@@ -90,7 +97,7 @@ export async function PUT(
 // DELETE /api/gallery/[id] - Delete a specific gallery image (admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<GalleryIdParams> }
 ) {
   try {
     // Check authentication
@@ -99,7 +106,8 @@ export async function DELETE(
       return authResponse;
     }
     
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     
     const { error } = await supabase
       .from('gallery_images')

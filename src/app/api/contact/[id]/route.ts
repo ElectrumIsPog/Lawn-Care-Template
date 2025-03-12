@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { checkApiAuth } from '@/lib/apiAuth';
 
+// Define the params type for contact ID
+interface ContactIdParams {
+  id: string;
+}
+
 // GET /api/contact/[id] - Get a specific contact submission (admin only)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<ContactIdParams> }
 ) {
   try {
     // Check authentication for admin access
@@ -14,7 +19,8 @@ export async function GET(
       return authResponse;
     }
     
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     
     const { data, error } = await supabase
       .from('contact_submissions')
@@ -43,7 +49,7 @@ export async function GET(
 // PUT /api/contact/[id] - Update a contact submission (admin only)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<ContactIdParams> }
 ) {
   try {
     // Check authentication for admin access
@@ -52,7 +58,8 @@ export async function PUT(
       return authResponse;
     }
     
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     const body = await request.json();
     
     // Update contact submission
@@ -85,7 +92,7 @@ export async function PUT(
 // DELETE /api/contact/[id] - Delete a contact submission (admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<ContactIdParams> }
 ) {
   try {
     // Check authentication for admin access
@@ -94,7 +101,8 @@ export async function DELETE(
       return authResponse;
     }
     
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     
     const { error } = await supabase
       .from('contact_submissions')
